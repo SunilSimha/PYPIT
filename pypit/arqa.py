@@ -29,7 +29,7 @@ ticks_font = matplotlib.font_manager.FontProperties(family='times new roman',
 from pypit import ardebug as debugger
 
 
-def arc_fit_qa(slf, fit, outfil=None, ids_only=False, title=None):
+def arc_fit_qa(slf, fit, ids_only=False, desc=""):
     """
     QA for Arc spectrum
 
@@ -41,9 +41,10 @@ def arc_fit_qa(slf, fit, outfil=None, ids_only=False, title=None):
     outfil : str, optional
       Name of output file
     """
+    # Outfil
+    module = inspect.stack()[0][3]
+    outfile = set_qa_filename(slf, module)
     arc_spec = fit['spec']
-    if outfil is not None:
-        pp = PdfPages(outfil)
 
     # Begin
     if not ids_only:
@@ -74,14 +75,16 @@ def arc_fit_qa(slf, fit, outfil=None, ids_only=False, title=None):
     ax_spec.set_ylim(ymin, ymax*1.2)
     ax_spec.set_xlabel('Pixel')
     ax_spec.set_ylabel('Flux')
+    # Title
+    tstamp = gen_timestamp()
+    title = desc+'\n'+tstamp
+
     if title is not None:
         ax_spec.text(0.04, 0.93, title, transform=ax_spec.transAxes,
                      size='x-large', ha='left')#, bbox={'facecolor':'white'})
     if ids_only:
         plt.tight_layout(pad=0.2, h_pad=0.0, w_pad=0.0)
-        if outfil is not None:
-            pp.savefig(bbox_inches='tight')
-            pp.close()
+        plt.savefig(outfile, dpi=800)
         plt.close()
         return
 
@@ -123,11 +126,14 @@ def arc_fit_qa(slf, fit, outfil=None, ids_only=False, title=None):
 
     # Finish
     plt.tight_layout(pad=0.2, h_pad=0.0, w_pad=0.0)
-    if slf is not None:
-        slf._qa.savefig(bbox_inches='tight')
-    else:
-        pp.savefig(bbox_inches='tight')
-        pp.close()
+    plt.savefig(outfile, dpi=800)
+    plt.close()
+    if False:
+        if slf is not None:
+            slf._qa.savefig(bbox_inches='tight')
+        else:
+            pp.savefig(bbox_inches='tight')
+            pp.close()
     #plt.close('all')
     return
 
@@ -725,7 +731,7 @@ def slit_profile(slf, mstrace, model, lordloc, rordloc, msordloc, textplt="Slit"
 
 
 def slit_trace_qa(slf, frame, ltrace, rtrace, extslit, desc="",
-                  root='trace', outfil=None, normalize=True, use_slitid=None):
+                  root='trace', normalize=True, use_slitid=None):
     """ Generate a QA plot for the slit traces
 
     Parameters
@@ -851,8 +857,9 @@ def set_qa_filename(slf, module):
 
     if module == 'slit_trace_qa':
         outfile = 'QA/PNGs/Slit_Trace_{:s}.png'.format(slf.setup)
+    elif module == 'arc_fit_qa':
+        outfile = 'QA/PNGs/Arc_Fit_{:s}.png'.format(slf.setup)
     elif module == 'obj_trace_qa':
-        debugger.set_trace()
         outfile = 'QA/PNGs/{1:s}_obj_trace.png'.format(slf._basename)
     else:
         msgs.error("NOT READY FOR THIS QA")
